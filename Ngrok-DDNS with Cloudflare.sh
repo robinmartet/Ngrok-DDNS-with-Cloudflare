@@ -16,7 +16,7 @@ echo "[*] Starting ngrok ($NGROK_PROTO) on local port $LOCAL_PORT..."
 ngrok $NGROK_PROTO $LOCAL_PORT > /dev/null &
 
 # Wait for ngrok to initialize and expose the local API
-sleep 5
+sleep 10
 
 # Retrieve the active ngrok tunnel URL for the chosen protocol
 NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[] | select(.proto==\"$NGROK_PROTO\") | .public_url")
