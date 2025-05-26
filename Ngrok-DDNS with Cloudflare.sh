@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # --- CLOUDFLARE CONFIGURATION ---
 CF_ZONE_ID="YOUR_ZONE_ID"             # Cloudflare Zone ID
