@@ -1,38 +1,46 @@
 #!/bin/bash
 
-# --- CONFIGURATION CLOUDLARE ---
-CF_ZONE_ID="TON_ZONE_ID"
-CF_RECORD_ID="TON_RECORD_ID"
-CF_AUTH_EMAIL="ton@email.com"
-CF_AUTH_KEY="TA_CLE_API"
-CF_DOMAIN="mc.tondomaine.com"  # Sous-domaine à mettre à jour
+# --- CLOUDFLARE CONFIGURATION ---
+CF_ZONE_ID="YOUR_ZONE_ID"             # Cloudflare Zone ID
+CF_RECORD_ID="YOUR_RECORD_ID"         # Cloudflare DNS record ID to update
+CF_AUTH_EMAIL="your@email.com"        # Cloudflare account email
+CF_AUTH_KEY="YOUR_API_KEY"            # Cloudflare API key
+CF_DOMAIN="your.subdomain.com"        # DNS record (subdomain) to update
 
-# --- CONFIGURATION MINECRAFT ---
-LOCAL_PORT=25565
+# --- NGROK CONFIGURATION ---
+NGROK_PROTO="tcp"                     # Ngrok protocol: tcp, http, https, etc.
+LOCAL_PORT=25565                      # Local port to expose
 
-# --- Lancer ngrok TCP en arrière-plan ---
-echo "[*] Démarrage de ngrok sur le port $LOCAL_PORT ..."
-ngrok tcp $LOCAL_PORT > /dev/null &
+# --- Start ngrok in the background ---
+echo "[*] Starting ngrok ($NGROK_PROTO) on local port $LOCAL_PORT..."
+ngrok $NGROK_PROTO $LOCAL_PORT > /dev/null &
 
-# Attendre que ngrok démarre et expose l'API locale
+# Wait for ngrok to initialize and expose the local API
 sleep 5
 
-# Récupérer le tunnel TCP actif (hostname et port)
-NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[] | select(.proto=="tcp") | .public_url')
+# Retrieve the active ngrok tunnel URL for the chosen protocol
+NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[] | select(.proto==\"$NGROK_PROTO\") | .public_url")
 
 if [[ -z "$NGROK_TUNNEL" ]]; then
-  echo "[!] Aucun tunnel TCP ngrok trouvé, vérifie que ngrok fonctionne."
+  echo "[!] No active $NGROK_PROTO ngrok tunnel found. Make sure ngrok is running properly."
   exit 1
 fi
 
-# Extraire hostname et port (ex: tcp://0.tcp.ngrok.io:25565)
-HOST=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f1)
-PORT=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f2)
+# Extract hostname and port for TCP; for HTTP/HTTPS, only the hostname
+if [[ "$NGROK_PROTO" == "tcp" ]]; then
+  HOST=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f1)
+  PORT=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f2)
+  FULL_ADDR="$HOST:$PORT"
+else
+  # For http/https, get only the hostname from the full URL
+  HOST=$(echo "$NGROK_TUNNEL" | sed -E 's#https?://([^/]+).*#\1#')
+  FULL_ADDR="$NGROK_TUNNEL"
+fi
 
-echo "[*] Tunnel ngrok trouvé : $HOST:$PORT"
+echo "[*] Found ngrok tunnel: $FULL_ADDR"
 
-# --- Mettre à jour l'enregistrement CNAME Cloudflare ---
-echo "[*] Mise à jour DNS Cloudflare : $CF_DOMAIN → $HOST"
+# --- Update Cloudflare DNS CNAME record ---
+echo "[*] Updating Cloudflare DNS: $CF_DOMAIN → $HOST"
 
 RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records/$CF_RECORD_ID" \
   -H "X-Auth-Email: $CF_AUTH_EMAIL" \
@@ -49,8 +57,8 @@ RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_I
 SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
 
 if [[ "$SUCCESS" == "true" ]]; then
-  echo "[+] DNS mis à jour avec succès."
-  echo "→ Tes joueurs peuvent se connecter avec l’adresse : $CF_DOMAIN:$PORT"
+  echo "[+] DNS updated successfully."
+  echo "→ Public address: $FULL_ADDR"
 else
-  echo "[!] Erreur lors de la mise à jour DNS : $RESPONSE"
+  echo "[!] DNS update failed: $RESPONSE"
 fi
