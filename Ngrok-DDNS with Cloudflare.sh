@@ -8,33 +8,53 @@ CF_AUTH_KEY="YOUR_API_KEY"            # Cloudflare API key
 CF_DOMAIN="your.subdomain.com"        # DNS record (subdomain) to update
 
 # --- NGROK CONFIGURATION ---
-NGROK_PROTO="tcp"                     # Ngrok protocol: tcp, http, etc.
-LOCAL_PORT=25565                      # Local port to expose
+NGROK_PROTO="http"                    # ngrok protocol: tcp, http, https
+LOCAL_PORT=9000                      # Local port to expose
 
 # --- Start ngrok in the background ---
 echo "[*] Starting ngrok ($NGROK_PROTO) on local port $LOCAL_PORT..."
-ngrok $NGROK_PROTO $LOCAL_PORT > /dev/null &
+ngrok $NGROK_PROTO $LOCAL_PORT --log=stdout > ngrok.log 2>&1 &
 
-# Wait for ngrok to initialize and expose the local API
-sleep 10
+# Wait longer to ensure ngrok is fully started
+sleep 15
 
-# Retrieve the active ngrok tunnel URL for the chosen protocol
-NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[] | select(.proto==\"$NGROK_PROTO\") | .public_url")
+# --- Retrieve the active ngrok tunnel URL based on protocol ---
+echo "[*] Retrieving ngrok public URL for protocol '$NGROK_PROTO'..."
 
-if [[ -z "$NGROK_TUNNEL" ]]; then
-  echo "[!] No active $NGROK_PROTO ngrok tunnel found. Make sure ngrok is running properly."
-  exit 1
-fi
-
-# Extract hostname and port for TCP; for HTTP/HTTPS, only the hostname
 if [[ "$NGROK_PROTO" == "tcp" ]]; then
-  HOST=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f1)
-  PORT=$(echo "$NGROK_TUNNEL" | sed 's/tcp:\/\///' | cut -d':' -f2)
+  # For TCP, get the public URL (format tcp://host:port)
+  NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[] | select(.proto=="tcp") | .public_url')
+  if [[ -z "$NGROK_TUNNEL" ]]; then
+    echo "[!] No active TCP ngrok tunnel found."
+    exit 1
+  fi
+  # Extract host and port
+  HOST=$(echo "$NGROK_TUNNEL" | sed 's|tcp://||' | cut -d':' -f1)
+  PORT=$(echo "$NGROK_TUNNEL" | sed 's|tcp://||' | cut -d':' -f2)
   FULL_ADDR="$HOST:$PORT"
-else
-  # For http/https, get only the hostname from the full URL
-  HOST=$(echo "$NGROK_TUNNEL" | sed -E 's#https?://([^/]+).*#\1#')
+
+elif [[ "$NGROK_PROTO" == "http" || "$NGROK_PROTO" == "https" ]]; then
+  # For HTTP/HTTPS, try to get the tunnel for the exact protocol first
+  NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r ".tunnels[] | select(.proto==\"$NGROK_PROTO\") | .public_url")
+  
+  # If not found and proto is http, fallback to https tunnel
+  if [[ -z "$NGROK_TUNNEL" && "$NGROK_PROTO" == "http" ]]; then
+    NGROK_TUNNEL=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[] | select(.proto=="https") | .public_url')
+    NGROK_PROTO="https"
+  fi
+
+  if [[ -z "$NGROK_TUNNEL" ]]; then
+    echo "[!] No active $NGROK_PROTO ngrok tunnel found."
+    exit 1
+  fi
+
+  # Extract hostname only
+  HOST=$(echo "$NGROK_TUNNEL" | sed -E 's#https?://([^/:]+).*#\1#')
   FULL_ADDR="$NGROK_TUNNEL"
+
+else
+  echo "[!] Protocol '$NGROK_PROTO' not supported."
+  exit 1
 fi
 
 echo "[*] Found ngrok tunnel: $FULL_ADDR"
@@ -61,4 +81,5 @@ if [[ "$SUCCESS" == "true" ]]; then
   echo "→ Public address: $FULL_ADDR"
 else
   echo "[!] DNS update failed: $RESPONSE"
+  exit 1
 fi
