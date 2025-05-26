@@ -8,7 +8,7 @@ CF_AUTH_KEY="YOUR_API_KEY"            # Cloudflare API key
 CF_DOMAIN="your.subdomain.com"        # DNS record (subdomain) to update
 
 # --- NGROK CONFIGURATION ---
-NGROK_PROTO="tcp"                     # Ngrok protocol: tcp, http, https, etc.
+NGROK_PROTO="tcp"                     # Ngrok protocol: tcp, http, etc.
 LOCAL_PORT=25565                      # Local port to expose
 
 # --- Start ngrok in the background ---
