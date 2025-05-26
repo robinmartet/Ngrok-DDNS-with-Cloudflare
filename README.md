@@ -8,7 +8,7 @@ It allows you to expose a local service (such as a Minecraft server) to the inte
 ## Features
 
 - Automatically starts an Ngrok tunnel on a configurable local port (default: 25565 for Minecraft).
-- Supports Ngrok protocols: `tcp`, `http`, and `https`.
+- Supports Ngrok protocols: `tcp`, and `http`.
 - Retrieves the public Ngrok URL dynamically via the local Ngrok API.
 - Updates a Cloudflare DNS CNAME record to point to the Ngrok tunnel address.
 - Displays the final public address accessible to clients.
