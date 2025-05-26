@@ -128,6 +128,22 @@ If you want, I can provide an example systemd unit file.
 
 ---
 
+## Use Case: Port Forwarding for Minecraft Servers
+
+This script is perfect for port forwarding a Minecraft server without having to touch your router or configure NAT rules.
+Thanks to Ngrok's tunneling and Cloudflare's DNS, players can join your server using a custom domain like mc.yourdomain.com, even if you're behind a firewall or CGNAT.
+
+✅ Ideal for home-hosted Minecraft servers, LAN parties, or temporary public servers.
+✅ No router configuration required — works even without public IP access.
+
+If Ngrok assigns a non-standard port, players simply connect with:
+```bash
+mc.yourdomain.com:PORT
+```
+For a fixed port like 25565, a paid Ngrok plan or a local TCP proxy setup is needed.
+
+---
+
 ## Contributing
 
 Feel free to submit issues or pull requests for bug fixes or feature requests.
