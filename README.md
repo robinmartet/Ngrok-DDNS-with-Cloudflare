@@ -15,6 +15,17 @@ It allows you to expose a local service (such as a Minecraft server) to the inte
 
 ---
 
+## ⚠️ Current Limitation with HTTPS and http
+
+Access via a custom domain in HTTPS and http (https://your.subdomain.com) does not work, because Ngrok does not provide an SSL certificate for your domain.
+Only the Ngrok URL (https://xxxx.ngrok-free.app) works properly over HTTPS.
+
+🛠 Solution: To use HTTPS or http with your own domain, you need a paid Ngrok plan or set up a reverse proxy (e.g., Nginx).
+
+✅ The TCP protocol works perfectly with your subdomain (e.g., your.subdomain.com:PORT), since it doesn’t require an SSL certificate.
+
+---
+
 ## Prerequisites
 
 - A domain managed by Cloudflare.
