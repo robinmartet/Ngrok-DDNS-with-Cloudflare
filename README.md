@@ -37,21 +37,21 @@ On Ubuntu/Debian, install `jq` with:
 ```bash
 sudo apt-get update
 sudo apt-get install jq
-
+```
 ### 3. Install `Ngrok`
 
 On Ubuntu/Debian, install `Ngrok` with:
 
 ```bash
 wget -q https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip -O /tmp/ngrok.zip && unzip -q /tmp/ngrok.zip -d /tmp && sudo mv /tmp/ngrok /usr/local/bin/ngrok && sudo chmod +x /usr/local/bin/ngrok && rm /tmp/ngrok.zip
-
+```
 ### 4. Configure Ngrok authentication token
 
 Sign up on ngrok.com if you don’t have an account, then get your authentication token and run:
 
 ```bash
 ngrok authtoken YOUR_NGROK_AUTHTOKEN
-
+```
 This step enables your Ngrok client to use advanced features and keeps tunnels associated with your account.
 
 ### 5. Script Configuration
@@ -64,10 +64,9 @@ CF_RECORD_ID="YOUR_CLOUDFLARE_RECORD_ID"      # Your DNS record ID to update
 CF_AUTH_EMAIL="your@email.com"                 # Your Cloudflare account email
 CF_AUTH_KEY="YOUR_CLOUDFLARE_API_KEY"          # Your Cloudflare API key
 CF_DOMAIN="mc.yourdomain.com"                  # The DNS record (subdomain) to update
-
 NGROK_PROTO="tcp"                              # Ngrok protocol: tcp, http, or https
 LOCAL_PORT=25565                               # Local port to expose (Minecraft default)
-
+```
 You can obtain CF_ZONE_ID and CF_RECORD_ID via the Cloudflare dashboard or API.
 
 Ensure the DNS record for your subdomain exists in your Cloudflare DNS zone (CNAME)
@@ -80,12 +79,12 @@ Ensure the DNS record for your subdomain exists in your Cloudflare DNS zone (CNA
 
 ```bash
 chmod +x ngrok-cloudflare-ddns.sh
-
+```
 ### 7. Run the script:
 
 ```bash
 ./ngrok-cloudflare-ddns.sh
-
+```
 The script will:
 
 Start an Ngrok tunnel with your specified settings.
